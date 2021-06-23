@@ -10,7 +10,25 @@ from helpers import chunks
 
 stocks = pd.read_csv('sp_500_stocks.csv')
 
-symbol = 'AAPL'
-api_url = f'https://sandbox.iexapis.com/stable/stock/{symbol}/stats?token={IEX_CLOUD_API_TOKEN}'
 
-data = requests.get(api_url).json()
+# data = requests.get(api_url).json()
+
+# Use imported chunks function to group API requests into groups of 100
+symbol_group = list(chunks(stocks['Ticker'], 100))
+# Create an empty array to push each group of tickers into
+symbol_string = []
+# Goes through each of the items in the list created above...
+for i in range(0, len(symbol_group)):
+  # ... and fill into the array just the ticker separated by a comma
+  symbol_string.append(', '.join(symbol_group[i]))
+
+# Make a list of column titles
+my_columns = ['Ticker', 'Price', 'One Year Return', 'Number of Shares to Buy']
+
+# Create a blank Data Frame
+final_dataframe = pd.DataFrame(columns = my_columns)
+
+for symbol in symbol_string:
+  batch_api_url = f'https://sandbox.iexapis.com/stable/stock/market/batch/?types=stats,quote&symbols={symbol}&token={IEX_CLOUD_API_TOKEN}'
+  data = requests.get(batch_api_url).json()
+
