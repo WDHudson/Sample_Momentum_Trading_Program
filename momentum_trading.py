@@ -28,13 +28,19 @@ my_columns = ['Ticker', 'Price', 'One Year Return', 'Number of Shares to Buy']
 # Create a blank Data Frame
 final_dataframe = pd.DataFrame(columns = my_columns)
 
+# Loop through all the symbols in the symbol string object
 for symbol in symbol_string:
+  # Create a batch API request for each group of 100 symbols
   batch_api_url = f'https://sandbox.iexapis.com/stable/stock/market/batch/?types=stats,quote&symbols={symbol}&token={IEX_CLOUD_API_TOKEN}'
+  # Declaring the variable of the response of the API request in json format
   data = requests.get(batch_api_url).json()
+  # Breaking down each individual ticker from each batch of 100 tickers and all of their data
   for ticker in symbol.split(','):
+    # Appending to the final dataframe
     final_dataframe = final_dataframe.append(
       pd.Series(
         [
+          # Needs to fill in 4 columns, so the N/A is just a place holder for the time being
           ticker,
           data[ticker]['quote']['iexRealtimePrice'],
           data[ticker]['stats']['year1ChangePercent'],
@@ -44,5 +50,31 @@ for symbol in symbol_string:
       ),
       ignore_index = True
     )
+
+# Sorts the dataframe by One Year Return. ascending = False puts the highest values on top and the inplace = True modifies the existing dataframe
+final_dataframe.sort_values('One Year Return', ascending = False, inplace = True)
+# Remove the low momentum stocks from the data frame
+final_dataframe = final_dataframe[:50]
+# inplace = True is used to modify the existing dataframe
+final_dataframe.reset_index(inplace = True)
+
+# Calculate the number of shares to buy
+def portfolio_input():
+  # global makes the variable here a global variable
+  global portfolio_size 
+  portfolio_size = input('Enter the size of the portfolio: ')
+  try:
+    float(portfolio_size)
+  except ValueError:
+    print('Enter a Number this time: ')
+    portfolio_size = input('Enter the size of the portfolio: ')
+
+# Invoke the function that was just declared
+portfolio_input()
+
+position_size = float(portfolio_size) / len(final_dataframe.index)
+for i in range(0, len(final_dataframe)):
+  # Insert in column with header Number of Shares to Buy the value of 1/ 50th of the portfolio divided by the share price
+  final_dataframe.loc[i, 'Number of Shares to Buy'] = math.floor(position_size / final_dataframe.loc[i, 'Price'])
 
 print(final_dataframe)
