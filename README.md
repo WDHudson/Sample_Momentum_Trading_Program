@@ -8,9 +8,11 @@ Dependencies to install:
 pip install pandas
 pip install numpy
 pip install XlsxWriter
-Bug Book:
 ```
-When I tried to commit, it had problems with the .csv file with the list of names. the error read as:
+
+Bug Book:
+
+1. When I tried to commit, it had problems with the .csv file with the list of names. the error read as:
 ```
 fatal: CRLF would be replaced by LF in data/sp_500_stocks.csv
 ```
