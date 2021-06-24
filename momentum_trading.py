@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import requests
 import math
-from scipy import stats
+from scipy.stats import percentileofscore as score
 import xlsxwriter
 from secrets import IEX_CLOUD_API_TOKEN
 from helpers import chunks
@@ -10,7 +10,7 @@ from helpers import chunks
 
 stocks = pd.read_csv('sp_500_stocks.csv')
 
-
+portfolio_size = 1000000
 # data = requests.get(api_url).json()
 
 # Use imported chunks function to group API requests into groups of 100
@@ -57,20 +57,6 @@ final_dataframe.sort_values('One Year Return', ascending = False, inplace = True
 final_dataframe = final_dataframe[:50]
 # inplace = True is used to modify the existing dataframe
 final_dataframe.reset_index(inplace = True)
-
-# Calculate the number of shares to buy
-def portfolio_input():
-  # global makes the variable here a global variable
-  global portfolio_size
-  portfolio_size = input('Enter the size of the portfolio: ')
-  try:
-    float(portfolio_size)
-  except ValueError:
-    print('Enter a Number this time: ')
-    portfolio_size = input('Enter the size of the portfolio: ')
-
-# Invoke the function that was just declared
-portfolio_input()
 
 position_size = float(portfolio_size) / len(final_dataframe.index)
 for i in range(0, len(final_dataframe['Ticker'])):
@@ -126,6 +112,9 @@ time_periods = [
 
 for row in hqm_dataframe.index:
   for time_period in time_periods:
-    hqm_dataframe.loc[row, f'{time_period} Return Percentile'] = stats.percentileofscore(hqm_dataframe[f'{time_period} Price Return'], hqm_dataframe.loc[row, f'{time_period} Price Return']) / 100
+    percentile_return = f'{time_period} Return Percentile'
+    price_return = f'{time_period} Price Return'
+    # Score is defined at top of page from an import of scipy
+    hqm_dataframe.loc[row, percentile_return] = score(hqm_dataframe[price_return], hqm_dataframe.loc[row, price_return]) / 100
 
 print(hqm_dataframe)
