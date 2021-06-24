@@ -61,7 +61,7 @@ final_dataframe.reset_index(inplace = True)
 # Calculate the number of shares to buy
 def portfolio_input():
   # global makes the variable here a global variable
-  global portfolio_size 
+  global portfolio_size
   portfolio_size = input('Enter the size of the portfolio: ')
   try:
     float(portfolio_size)
@@ -73,8 +73,59 @@ def portfolio_input():
 portfolio_input()
 
 position_size = float(portfolio_size) / len(final_dataframe.index)
-for i in range(0, len(final_dataframe)):
+for i in range(0, len(final_dataframe['Ticker'])):
   # Insert in column with header Number of Shares to Buy the value of 1/ 50th of the portfolio divided by the share price
-  final_dataframe.loc[i, 'Number of Shares to Buy'] = math.floor(position_size / final_dataframe.loc[i, 'Price'])
+  final_dataframe.loc[i, 'Number of Shares to Buy'] = position_size / final_dataframe['Price'][i]
 
-print(final_dataframe)
+hqm_columns = [
+  'Ticker',
+  'Price',
+  'Number of Shares to Buy',
+  '1 Year Price Return',
+  '1 Year Return Percentile',
+  '6 Month Price Return',
+  '6 Month Return Percentile',
+  '3 Month Price Return',
+  '3 Month Return Percentile',
+  '1 Month Price Return',
+  '1 Month Return Percentile'
+  ]
+
+hqm_dataframe = pd.DataFrame(columns = hqm_columns)
+
+for symbol in symbol_string:
+  batch_api_url = f'https://sandbox.iexapis.com/stable/stock/market/batch/?types=stats,quote&symbols={symbol}&token={IEX_CLOUD_API_TOKEN}'
+  data = requests.get(batch_api_url).json()
+  for ticker in symbol.split(','):
+    hqm_dataframe = hqm_dataframe.append(
+      pd.Series(
+        [
+          ticker,
+          data[ticker]['quote']['iexRealtimePrice'],
+          'N/A',
+          data[ticker]['stats']['year1ChangePercent'],
+          'N/A',
+          data[ticker]['stats']['month6ChangePercent'],
+          'N/A',
+          data[ticker]['stats']['month3ChangePercent'],
+          'N/A',
+          data[ticker]['stats']['month1ChangePercent'],
+          'N/A'
+        ],
+        index = hqm_columns
+      ),
+      ignore_index = True
+    )
+
+time_periods = [
+  '1 Year',
+  '6 Month',
+  '3 Month',
+  '1 Month'
+]
+
+for row in hqm_dataframe.index:
+  for time_period in time_periods:
+    hqm_dataframe.loc[row, f'{time_period} Return Percentile'] = 0
+
+print(hqm_dataframe)
