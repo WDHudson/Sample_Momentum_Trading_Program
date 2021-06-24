@@ -126,6 +126,6 @@ time_periods = [
 
 for row in hqm_dataframe.index:
   for time_period in time_periods:
-    hqm_dataframe.loc[row, f'{time_period} Return Percentile'] = 0
+    hqm_dataframe.loc[row, f'{time_period} Return Percentile'] = stats.percentileofscore(hqm_dataframe[f'{time_period} Price Return'], hqm_dataframe.loc[row, f'{time_period} Price Return']) / 100
 
 print(hqm_dataframe)
