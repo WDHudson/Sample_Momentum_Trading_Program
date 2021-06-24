@@ -6,12 +6,12 @@ from scipy.stats import percentileofscore as score
 import xlsxwriter
 from secrets import IEX_CLOUD_API_TOKEN
 from helpers import chunks
+from statistics import mean
 
 
 stocks = pd.read_csv('sp_500_stocks.csv')
 
 portfolio_size = 1000000
-# data = requests.get(api_url).json()
 
 # Use imported chunks function to group API requests into groups of 100
 symbol_group = list(chunks(stocks['Ticker'], 100))
@@ -74,7 +74,8 @@ hqm_columns = [
   '3 Month Price Return',
   '3 Month Return Percentile',
   '1 Month Price Return',
-  '1 Month Return Percentile'
+  '1 Month Return Percentile',
+  'HQM Score'
   ]
 
 hqm_dataframe = pd.DataFrame(columns = hqm_columns)
@@ -96,6 +97,7 @@ for symbol in symbol_string:
           data[ticker]['stats']['month3ChangePercent'],
           'N/A',
           data[ticker]['stats']['month1ChangePercent'],
+          'N/A',
           'N/A'
         ],
         index = hqm_columns
@@ -117,4 +119,9 @@ for row in hqm_dataframe.index:
     # Score is defined at top of page from an import of scipy
     hqm_dataframe.loc[row, percentile_return] = score(hqm_dataframe[price_return], hqm_dataframe.loc[row, price_return]) / 100
 
+for row in hqm_dataframe.index:
+  momentum_percentiles = []
+  for time_period in time_periods:
+    momentum_percentiles.append(hqm_dataframe.loc[row, f'{time_period} Return Percentile'])
+  hqm_dataframe.loc[row, 'HQM Score'] = mean(momentum_percentiles)
 print(hqm_dataframe)
